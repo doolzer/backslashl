@@ -1,0 +1,15 @@
+package:
+  name: backslashl
+  version: {{ RELEASE_TAG }}
+
+build:
+  number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+  script_env:
+    - RELEASE_TAG
+  script: make build
+
+requirements:
+  - kdb
+
+source:
+  git_url: ../..

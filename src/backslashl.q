@@ -1,9 +1,9 @@
-/ @package  sloshl
+/ @package  backslashl
 / @author   Colin Dooley
 / @date     2023.01.14
 / @about    q package and file loading framework (slosh l)
 
-\d .sloshl
+\d .backslashl
 
 // GLOBALS
 / Tables below will keep track of what file loaded what, and which file belongs to which package, if that information is available.
@@ -78,7 +78,9 @@ pkg.info:{[name]
 / @param  dirs  - [symbols/null] List of directories for which to list the contents of. If empty or null, defaults to pkg.qpath
 / @result       - [table] with columns, pkg, dir, name, version. Sets result 
 pkg.refresh:{[dirs]
-  res:res,'v.pkg@'exec pkg from res:{$[null[y]|()~d:key y;x;x,([]pkg:d;fp:.Q.dd'[y;d])]}/[([]pkg:`$();fp:`);dirs];
+  if[0=count res:res,'v.pkg@'exec pkg from res:{$[null[y]|()~d:key y;x;x,([]pkg:d;fp:.Q.dd'[y;d])]}/[([]pkg:`$();fp:`);dirs];
+    :pkg.details:([]pkg:`$();fp:`$();name:`$();version:())
+    ];
   res:update version:version inter\:(.Q.n,".")from res;
   :pkg.details:distinct pkg.details,:res
   }
@@ -124,7 +126,7 @@ pkg.load:{[name]
   context,:ic;
   }
 / @param  name  - [dict/string/symbol] Name of file to load. Or dictionary with file details, including fp key specifying filepath
-/ @result       - [void] Loads file if it exists, errors otherwise. File details added to .sloshl.files global
+/ @result       - [void] Loads file if it exists, errors otherwise. File details added to files global
 pkg.l.file:{[name]
   / Set package context
   pkg:context.pkg;
@@ -137,17 +139,22 @@ pkg.l.file:{[name]
   :res
   }
 
+/ List of supported subdirectories to load from (in order of preference) if <pkgname> does not exist
+pkg.subdirs:`src`q`k;
+
 / @param  name  - [dict/string/symbol] Name of package to load. Or dictionary with package details, including fp key specifying filepath
-/ @result       - [void] Loads init.q (if it exists) OR *.q/ *.k files from first of src, <pkgname> or q subdirectory found in package filepath. package details added to .sloshl.packages global
+/ @result       - [void] Loads init.q (if it exists) OR *.q/ *.k files from first of src, <pkgname> or q subdirectory found in package filepath. package details added to packages global
 pkg.l.pkg:{[name]
   / Set parent package context
   ppkg:context.pkg;
   if[not`pkg~(res:$[99=type name;name;pkg.find name])`format;
     '"Could not find package: ",u.tostr res`name
     ];
-  / Find subdirectory in order of preference, src, <pkgname>, or q
-  if[null subdir:first(`src,res[`name],`q)inter key res`fp;
-    '"Unexpected package structure in ",name,". Expect either a src, ",res[`name]," or q subdirectory (in that order of preference)"
+  / Find subdirectory in order of preference, <pkgname>, src, q or k
+  if[null subdir:first(res[`name],pkg.subdirs)inter key res`fp;
+    if[not any key[res`fp]like/:("*.[qk]";"*.[qk]_");
+      '"Unexpected package structure in ",name,". Expect either a ",res[`name]," src, q or k subdirectory (in that order of preference) or top-level *.[qk] files"
+      ]
     ];
   context.switch res:update ppkg,pkgdir:fp,fp:.Q.dd[res`fp;subdir]from res; 
   packages,:1!select pkg,name,version,fp:pkgdir,ppkg from pkg.l.dir update format:`dir from res;
@@ -176,4 +183,4 @@ init:{[]
 init[];
 
 / Shortcut
-.q.import:{.Q.dd[x;`pkg.load][y]}value"\\d"
+.q.import:{@[x .`pkg`load;y;{'x}]}value"\\d"
