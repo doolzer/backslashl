@@ -7,40 +7,44 @@
 
 // GLOBALS
 / Tables below will keep track of what file loaded what, and which file belongs to which package, if that information is available.
-files:1!select fp,pkg from packages:([pkg:`$()]name:`$();version:();fp:`$();ppkg:`$());
+files:1!select fp,pkg from packages:([pkg:`$()]name:`$();version:();fp:`$();ppkg:`$();constraint:());
 
 / Context object will keep bearings as traverse through package dependencies
 context.switch:{[info]
   $[(::)~info;context.fp::hsym context.pkg::`:.;99=type info;context,:(k:`pkg`fp inter key info)#info;'`type];
   }
 
+/ @param  x   [string/string[]] String or list of strings (in version form, e.g. <major>.<minor>.<patch>)
+/ @result     [long[]/long[][]] versions transformed to lists of longs, all lists the same length, padded with zeroes where necessary
+v.n:{$[10=type x;"J"$"."vs x;N#'r,\:(N:max count each r:"J"$"."vs'x,\:"")#0j]}
+
 / @param  x   - [string] Version string typically of the form <major>.<minor>.<patch>
 / @param  y   - [string] Version string typically of the form <major>.<minor>.<patch>
 / @result     - [bool] Compares x and y version strings, returning true if equal (2.8.0 == 2.8), false otherwise
-v.eq:{min .[=]N#'r,\:(N:max count each r:"J"$"."vs'(x;y))#0j}
+v.eq:{min .[=]v.n(x;y)}
 
 / @param  x   - [string] Version string typically of the form <major>.<minor>.<patch>
 / @param  y   - [string] Version string typically of the form <major>.<minor>.<patch>
 / @result     - [bool] Compares x and y version strings, returning true if x less than y, false otherwise
-v.lt:{max[.[<]r]&all .[<=]r:N#'r,\:(N:max count each r:"J"$"."vs'(x;y))#0j}
+v.lte:{all(.[<=;r])||\[.[<]r:v.n(x;y)]}
 
 / Supported comparison operators for version rules given below, and mapped to a function
 v.ops:.[!]flip(
-  ("-","" ; {v.eq[x;y]}               );
-  ("=","" ; {v.eq[x;y]}               );
-  ("=="   ; {v.eq[x;y]}               );
-  ("<="   ; {v.lt[x;y]|v.eq[x;y]}     );
-  ("<","" ; {v.lt[x;y]}               );
-  (">","" ; {not v.lt[x;y]|v.eq[x;y]} );
-  (">="   ; {not v.lt[x;y]}           );
-  ("~="   ; {not v.eq[x;y]}           );
-  ("<>"   ; {not v.eq[x;y]}           );
-  ("!="   ; {not v.eq[x;y]}           ));
+  ("-","" ; {v.eq[x;y]}                );
+  ("=","" ; {v.eq[x;y]}                );
+  ("=="   ; {v.eq[x;y]}                );
+  ("<="   ; {v.lte[x;y]}               );
+  ("<","" ; {v.lte[x;y]&not v.eq[x;y]} );
+  (">","" ; {not v.lte[x;y]}           );
+  (">="   ; {v.eq[x;y]|not v.lte[x;y]} );
+  ("~="   ; {not v.eq[x;y]}            );
+  ("<>"   ; {not v.eq[x;y]}            );
+  ("!="   ; {not v.eq[x;y]}            ));
 
 / @param  x   - [string] Version string typically of the form <major>.<minor>.<patch>
 / @param  y   - [string] Version rule, e.g. >=2.8 or <>1.4.2
 / @result     - [bool] If x satisfies the version rule, return true, false otherwise
-v.comp:{value(v.ops r[0];x;last r:(0,(y in .Q.n)?1b)cut y)}
+v.comp:{$[first[r:(0,(y in .Q.n)?1b)cut y]in key v.ops;.[v.ops r 0;(x;last r)];'"Invalid version comparison"]};
 
 / @param  pkgs  - [strings] List of package strings to be sorted in descending order by version
 / @result       - [long[]] Index that would arrange list of packages in descending order by version
@@ -106,7 +110,7 @@ pkg.find:{[name]
   if[0=count res:delete valid from select from res where valid;
     '"No matching package found for ",.j.j info
     ];
-  :res@first v.sort res`version
+  :update constraint:info`version from res@first v.sort res`version
   }
 
 / @param  name  - [dictionary/symbol/string] pkg name and version number in a string, e.g. "package-name-1.165.10", or dictionary with package details
@@ -152,12 +156,12 @@ pkg.l.pkg:{[name]
     ];
   / Find subdirectory in order of preference, <pkgname>, src, q or k
   if[null subdir:first(res[`name],pkg.subdirs)inter key res`fp;
-    if[not any key[res`fp]like/:("*.[qk]";"*.[qk]_");
+    if[not any any key[res`fp]like/:("*.[qk]";"*.[qk]_");
       '"Unexpected package structure in ",name,". Expect either a ",res[`name]," src, q or k subdirectory (in that order of preference) or top-level *.[qk] files"
       ]
     ];
   context.switch res:update ppkg,pkgdir:fp,fp:.Q.dd[res`fp;subdir]from res; 
-  packages,:1!select pkg,name,version,fp:pkgdir,ppkg from pkg.l.dir update format:`dir from res;
+  packages,:1!select pkg,name,version,fp:pkgdir,ppkg,constraint from pkg.l.dir update format:`dir from res;
   :res
   }
 
@@ -182,5 +186,5 @@ init:{[]
   }
 init[];
 
-/ Shortcut
-.q.import:{@[x .`pkg`load;y;{'x}]}value"\\d"
+/ Shortcuts
+.q.backslashl:.q.import:{@[x .`pkg`load;y;{'x}]}value"\\d"

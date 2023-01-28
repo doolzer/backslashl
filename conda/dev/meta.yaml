@@ -4,11 +4,11 @@ package:
 
 build:
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
-  script: make  build
+  script: make build Q_BUILD_PATH="/Users/doolzer/work/pkg"
 
 requirements:
   build:
     - kdb
 
 source:
-  git_url: ../../src
+  path: ../../
