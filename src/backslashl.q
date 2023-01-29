@@ -25,7 +25,7 @@ v.eq:{min .[=]v.n(x;y)}
 
 / @param  x   - [string] Version string typically of the form <major>.<minor>.<patch>
 / @param  y   - [string] Version string typically of the form <major>.<minor>.<patch>
-/ @result     - [bool] Compares x and y version strings, returning true if x less than y, false otherwise
+/ @result     - [bool] Compares x and y version strings, returning true if x less than or equal y, false otherwise
 v.lte:{all(.[<=;r])||\[.[<]r:v.n(x;y)]}
 
 / Supported comparison operators for version rules given below, and mapped to a function
