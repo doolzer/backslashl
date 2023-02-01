@@ -1,7 +1,7 @@
 / @package  backslashl
 / @author   Colin Dooley
 / @date     2023.01.14
-/ @about    q package and file loading framework (slosh l)
+/ @about    q package and file loading framework (backslash l)
 
 \d .backslashl
 
