@@ -44,7 +44,7 @@ v.ops:.[!]flip(
 / @param  x   - [string] Version string typically of the form <major>.<minor>.<patch>
 / @param  y   - [string] Version rule, e.g. >=2.8 or <>1.4.2
 / @result     - [bool] If x satisfies the version rule, return true, false otherwise
-v.comp:{$[first[r:(0,(y in .Q.n)?1b)cut y]in key v.ops;.[v.ops r 0;(x;last r)];'"Invalid version comparison"]};
+v.comp:{$[first[r:(0,(y in .Q.n)?1b)cut y]in key v.ops;.[v.ops r 0;(x;last r)];0=count first r;v.eq[x;last r];'"Invalid version comparison"]};
 
 / @param  pkgs  - [strings] List of package strings to be sorted in descending order by version
 / @result       - [long[]] Index that would arrange list of packages in descending order by version
@@ -137,6 +137,7 @@ pkg.l.file:{[name]
   if[()~key res[`fp]:hsym`$u.tostr(res:$[99=type name;name;pkg.find name])`fp;
     '"No such file or directory: ",1_string res`fp
     ];
+  context.switch enlist[`fp]!enlist` sv -1_` vs res`fp;
   value"\\l ",1_string res`fp;
   res:update pkg from res;
   files,:select fp,pkg from res;
@@ -153,6 +154,9 @@ pkg.l.pkg:{[name]
   ppkg:context.pkg;
   if[not`pkg~(res:$[99=type name;name;pkg.find name])`format;
     '"Could not find package: ",u.tostr res`name
+    ];
+  if[0<count incompatible:select from packages where name=res`name,{$[0=count y;0b;not all x v.comp\:/:csv vs y]}[version;res`version];
+    '"Package already loaded with imcompatible version: \n",.Q.s2 incompatible
     ];
   / Find subdirectory in order of preference, <pkgname>, src, q or k
   if[null subdir:first(res[`name],pkg.subdirs)inter key res`fp;
@@ -187,4 +191,5 @@ init:{[]
 init[];
 
 / Shortcuts
-.q.backslashl:.q.import:{@[x .`pkg`load;y;{'x}]}value"\\d"
+.q.backslashl:{.[x;`pkg`load]y}value"\\d"
+.q.import:{@[x .`pkg`load;y;{'x}]}value"\\d"
