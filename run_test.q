@@ -1,6 +1,3 @@
-
-
-#!/bin/bash q
 \l src/backslashl.q
 import`qunit
 import`test
