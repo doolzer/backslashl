@@ -7,7 +7,7 @@
 
 // GLOBALS
 / Tables below will keep track of what file loaded what, and which file belongs to which package, if that information is available.
-files:select fp,pkg,time:.z.p from packages:([ppkg:`$();pkg:`$()]name:`$();version:();fp:`$();constraint:());
+files:select fp,pkg,time:.z.p from packages:([ppkg:`$();pkg:`$()]name:`$();version:();fp:`$();constraint:();success:0b);
 
 / Context object will keep bearings as traverse through package dependencies
 context.switch:{[info]
@@ -65,7 +65,7 @@ v.pkg:{[name]
 u.tostr:{$[10=t:type x;x;not t within 0 99;string x;.z.s@'x]}
 
 pkg.isfile:{$[not any x like/:("*.[qk]";"*.[qk]_");0b;x~key x:hsym`$u.tostr x;1b;x~key x:.Q.dd[context.fp;`$1_string x]]}
-pkg.ishdb:{$[not pkg.isdir x;0b;`par.txt in key x;1b;not null("DMJJ"i:10 7 4?count x0)$x0:string first key x]}
+pkg.ishdb:{$[not pkg.isdir x;0b;`par.txt in key x:hsym`$u.tostr x;1b;not null("DMJJ"i:10 7 4?count x0)$x0:string first key x]}
 pkg.isdir:{$[pkg.isfile x;0b;pkg.ispkg x;0b;()~key x:hsym`$u.tostr x;not()~key .Q.dd[context.fp;`$1_string x];1b]}
 pkg.ispkg:{0<count select from pkg.list[]where x like/:(string[name],'"*")}
 
@@ -155,11 +155,12 @@ pkg.l.pkg:{[name]
   if[not`pkg~(res:$[99=type name;name;pkg.find name])`format;
     '"Could not find package: ",u.tostr res`name
     ];
-  if[0<count found:select from packages where name=res`name;
+  if[0<count found:select from packages where name=res`name,success;
     if[0<count incompatible:select from found where{$[0=count y;0b;not all x v.comp\:/:csv vs y]}[version;res`constraint];
+      context.switch[];
       'string[res`name]," already loaded with version ",(exec csv sv distinct version from incompatible),". Not compatible with version required for ",string ppkg
-      ]
-    packages,:res:select ppkg,pkg,name,version,fp,constraint from res;
+      ];
+    packages,:res:select ppkg,pkg,name,version,fp,constraint,success:1b from res;
     :res
     ];
   / Find subdirectory in order of preference, <pkgname>, src, q or k
@@ -169,7 +170,9 @@ pkg.l.pkg:{[name]
       ]
     ];
   context.switch res:update ppkg,pkgdir:fp,fp:.Q.dd[res`fp;subdir]from res; 
-  packages,:select pkg,name,version,fp:pkgdir,ppkg,constraint from pkg.l.dir update format:`dir from res;
+  packages,:select pkg,name,version,fp:pkgdir,ppkg,constraint,success:0b from res;
+  pkg.l.dir update format:`dir from res;
+  packages[ppkg,res`pkg;`success]:1b;
   :res
   }
 

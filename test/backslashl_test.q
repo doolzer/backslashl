@@ -1,6 +1,6 @@
 .backslashl_test.beforeNamespace_createOverrides:{[]
   `AEQ`ATRUE`ATHROWS set'.qunit`assertEquals`assertTrue`assertThrows;
-  .backslashl.pkg.qpath:.Q.dd[` sv -1_` vs hsym`$(reverse value .z.s)2;`resources`lib];
+  .backslashl.pkg.qpath:.Q.dd[.backslashl_test.testdir:` sv -1_` vs hsym`$(reverse value .z.s)2;`resources`lib];
   }
 
 .backslashl_test.tearDown_globals:{[]
@@ -27,7 +27,12 @@
 
   time:exec max time from .backslashl.files where pkg like"lib-a*";
   .backslashl.pkg.load"lib-a";
-  AEQ[exec max time from .backslashl.files where pkg like"lib-a*";time;"[.backslashl.pkg.load] Does not reload a file if already loaded"];
+  AEQ[exec max time from .backslashl.files where pkg like"lib-a*";time;"[.backslashl.pkg.load] Does not reload a pkg if already loaded"];
 
   ATHROWS[.backslashl.pkg.load;"lib-c";"*Not compatible*";"[.backslashl.pkg.load] Breaks if attempt to load a package that does not satisfy previous constraint"];
+
+  .backslashl.pkg.load 1_ string .Q.dd[.backslashl_test.testdir;`resources`hdb];
+  ATRUE[$[()~key`hdb;0b;()~key`.Q.pt;0b;(`data in .Q.pt)&hdb like"*resources/hdb"];"[.backslashl.pkg.load] Successfully loads hdb directory"];
+  ATRUE[1=count select from .backslashl.files where fp like"*/hdb";"[.backslashl.pkg.load] HDB specified in files"];
+  ATRUE[0=count select from .backslashl.files where fp like"*hdb.q";"[.backslashl.pkg.load] Specific files in hdb not speficied in files, loaded natively by hdb load func (.Q.l)"];
   }
