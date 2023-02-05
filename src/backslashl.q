@@ -7,7 +7,7 @@
 
 // GLOBALS
 / Tables below will keep track of what file loaded what, and which file belongs to which package, if that information is available.
-files:1!select fp,pkg from packages:([pkg:`$()]name:`$();version:();fp:`$();ppkg:`$();constraint:());
+files:select fp,pkg,time:.z.p from packages:([ppkg:`$();pkg:`$()]name:`$();version:();fp:`$();constraint:());
 
 / Context object will keep bearings as traverse through package dependencies
 context.switch:{[info]
@@ -110,7 +110,7 @@ pkg.find:{[name]
   if[0=count res:delete valid from select from res where valid;
     '"No matching package found for ",.j.j info
     ];
-  :update constraint:info`version from res@first v.sort res`version
+  :update constraint:info`version from res@last v.sort res`version
   }
 
 / @param  name  - [dictionary/symbol/string] pkg name and version number in a string, e.g. "package-name-1.165.10", or dictionary with package details
@@ -140,7 +140,7 @@ pkg.l.file:{[name]
   context.switch enlist[`fp]!enlist` sv -1_` vs res`fp;
   value"\\l ",1_string res`fp;
   res:update pkg from res;
-  files,:select fp,pkg from res;
+  files,:select fp,pkg,time:.z.p from res;
   :res
   }
 
@@ -155,8 +155,12 @@ pkg.l.pkg:{[name]
   if[not`pkg~(res:$[99=type name;name;pkg.find name])`format;
     '"Could not find package: ",u.tostr res`name
     ];
-  if[0<count incompatible:select from packages where name=res`name,{$[0=count y;0b;not all x v.comp\:/:csv vs y]}[version;res`version];
-    '"Package already loaded with imcompatible version: \n",.Q.s2 incompatible
+  if[0<count found:select from packages where name=res`name;
+    if[0<count incompatible:select from found where{$[0=count y;0b;not all x v.comp\:/:csv vs y]}[version;res`constraint];
+      'string[res`name]," already loaded with version ",(exec csv sv distinct version from incompatible),". Not compatible with version required for ",string ppkg
+      ]
+    packages,:res:select ppkg,pkg,name,version,fp,constraint from res;
+    :res
     ];
   / Find subdirectory in order of preference, <pkgname>, src, q or k
   if[null subdir:first(res[`name],pkg.subdirs)inter key res`fp;
@@ -165,7 +169,7 @@ pkg.l.pkg:{[name]
       ]
     ];
   context.switch res:update ppkg,pkgdir:fp,fp:.Q.dd[res`fp;subdir]from res; 
-  packages,:1!select pkg,name,version,fp:pkgdir,ppkg,constraint from pkg.l.dir update format:`dir from res;
+  packages,:select pkg,name,version,fp:pkgdir,ppkg,constraint from pkg.l.dir update format:`dir from res;
   :res
   }
 
