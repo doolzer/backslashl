@@ -22,19 +22,19 @@ q)import`re
 q)import"qunit-0.0.1"
 q)import"util>=0.0.1"
 q).backslashl.packages
-ppkg     pkg        | name  version fp                                   constraint
---------------------| -------------------------------------------------------------
-re-0.0.1 util-0.0.1 | util  "0.0.1" :/Users/doolzer/work/pkg/util-0.0.1  ""
-:.       re-0.0.1   | re    "0.0.1" :/Users/doolzer/work/pkg/re-0.0.1    ""
-:.       qunit-0.0.1| qunit "0.0.1" :/Users/doolzer/work/pkg/qunit-0.0.1 "-0.0.1"
-:.       util-0.0.1 | util  "0.0.1" :/Users/doolzer/work/pkg/util-0.0.1  ">=0.0.1"
+ppkg     pkg        | name  version fp                                   constraint success
+--------------------| ---------------------------------------------------------------------
+:.       re-0.0.1   | re    "0.0.1" :/Users/doolzer/work/pkg/re-0.0.1    ""         1
+re-0.0.1 util-0.0.1 | util  "0.0.1" :/Users/doolzer/work/pkg/util-0.0.1  ""         1
+:.       qunit-0.0.1| qunit "0.0.1" :/Users/doolzer/work/pkg/qunit-0.0.1 "-0.0.1"   1
+:.       util-0.0.1 | util  "0.0.1" :/Users/doolzer/work/pkg/util-0.0.1  ">=0.0.1"  1
 q).backslashl.files
 fp                                            pkg         time
 ---------------------------------------------------------------------------------------
-:/Users/doolzer/work/pkg/util-0.0.1//util.k   util-0.0.1  2023.02.05D11:01:05.785102000
-:/Users/doolzer/work/pkg/re-0.0.1//re.k       re-0.0.1    2023.02.05D11:01:05.785879000
-:/Users/doolzer/work/pkg/re-0.0.1//init.q     re-0.0.1    2023.02.05D11:01:05.785889000
-:/Users/doolzer/work/pkg/qunit-0.0.1//qunit.q qunit-0.0.1 2023.02.05D11:01:05.799312000
+:/Users/doolzer/work/pkg/util-0.0.1//util.k   util-0.0.1  2023.02.05D12:49:40.109702000
+:/Users/doolzer/work/pkg/re-0.0.1//re.k       re-0.0.1    2023.02.05D12:49:40.110220000
+:/Users/doolzer/work/pkg/re-0.0.1//init.q     re-0.0.1    2023.02.05D12:49:40.110224000
+:/Users/doolzer/work/pkg/qunit-0.0.1//qunit.q qunit-0.0.1 2023.02.05D12:49:40.122544000
 ```
 
 Note that once a package has been loaded, the version loaded will be set as a constraint, blocking the same package with a different version being loaded later on.
