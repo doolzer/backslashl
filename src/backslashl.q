@@ -138,9 +138,8 @@ pkg.l.file:{[name]
     '"No such file or directory: ",1_string res`fp
     ];
   context.switch enlist[`fp]!enlist` sv -1_` vs res`fp;
+  files,:select fp,pkg,time:.z.p from res:update pkg from res;
   value"\\l ",1_string res`fp;
-  res:update pkg from res;
-  files,:select fp,pkg,time:.z.p from res;
   :res
   }
 
